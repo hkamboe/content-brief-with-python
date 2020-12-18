@@ -16,9 +16,7 @@ B. Run a google search in incognito mode
 
 C. Scrape the top 10 organic results on Google
 
-D. Extract words that are contained in the following html tags in a CSV output
-
-<h1>, <h2>, <h3>, <h4>, <b>, <strong>, <em>, <i>, <a>
+D. Extract words that are contained in the following html tags in a CSV output - <h1>, <h2>, <h3>, <h4>, <b>, <strong>, <em>, <i>, <a>
 
 E. Give you a starting point as to what should a writer cover in your content pieces based on what items are contained in the top 10 results
 
