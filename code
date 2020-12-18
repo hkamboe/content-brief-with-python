@@ -1,0 +1,139 @@
+#step 1 - generate google search results
+
+
+import requests
+from bs4 import BeautifulSoup
+from lxml import etree
+from selenium import webdriver
+from webdriver_manager.firefox import GeckoDriverManager
+import os, csv, time
+from lxml import html 
+
+rootFolder  = os.path.dirname(os.path.realpath(__file__))
+RESULTS_CSV = os.path.join(rootFolder, 'results.csv')
+USER_AGENT = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
+
+
+def fetch_results(search_term, number_results, language_code):
+    assert isinstance(search_term, str), 'Search term must be a string'
+    assert isinstance(number_results, int), 'Number of results must be an integer'
+    escaped_search_term = search_term.replace(' ', '+')
+ 
+    google_url = 'https://www.google.ca/search?q={}&num={}&hl={}'.format(escaped_search_term, number_results, language_code)
+    response = requests.get(google_url, headers=USER_AGENT)
+    byte_string = response.content
+    source_code = html.fromstring(byte_string)
+ 
+    return search_term, source_code
+
+	
+#step 2 - store the urls to an empty list
+
+
+def parse_results(source_code, keyword):
+ 
+    found_results = []
+    rank = 1
+    result_block = source_code.xpath("//div[@id='search']/div/div/div[@class='g']")
+    for result in result_block:
+        link = result.xpath(".//a[string-length(@href)>0 and @href!='#']/../../div/a[string-length(@href)>0 and @href!='#' and (@class!='exp-r' or string-length(@class)=0)]")
+        title = link[0].xpath('./h3')
+        description = result.xpath('.//div/div/span/span')
+        #description = result.find('span', attrs={'class': 'st'})
+        if link and title:
+            link = link[0].attrib['href']
+            title = title[0].text_content()
+            description = description[0].text_content()
+            if link != '#':
+                found_results.append({'keyword': keyword, 'rank': rank, 'title': title, 'link': link, 'description': description})
+                rank += 1
+
+    return found_results
+
+
+def get_value(tag, index):
+    try:
+        return tag[index].get_text()
+    except:
+        return None
+
+
+if __name__ == '__main__':
+    keyword, source_code = fetch_results('python', 10, 'en')
+    found_results = parse_results(source_code, keyword)
+    print(found_results)
+
+    f_out = open(RESULTS_CSV, "w", newline="", encoding="utf-8")
+    fieldnames = ["URL", "h1", "h2", "h3", "h4", "b", "strong", "em", "i", "a"]
+    writer = csv.DictWriter(f_out, fieldnames=fieldnames)
+    writer.writeheader()
+
+#prepare a csv file and store the tags in it
+
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference("browser.privatebrowsing.autostart", True)
+    driver = webdriver.Firefox(firefox_profile=firefox_profile, executable_path=GeckoDriverManager().install())
+    for url in found_results:
+        #opening the website..
+        driver.get(url['link'])
+        time.sleep(5)
+        #assigning the html source code to object
+        source_code =  driver.execute_script("return document.documentElement.outerHTML")
+        #define soup as a Beautifulsoup object and specify a parser to be used
+        soup = BeautifulSoup(source_code, 'html.parser')
+        #name a variable h1_tag in the soup object by using the find_all function
+        h1_tag = soup.find_all("h1", limit = 3)
+        #name a variable h2_tag in the soup object by using the find_all function
+        h2_tag = soup.find_all("h2", limit = 3)
+        #name a variable h3_tag in the soup object by using the find_all function
+        h3_tag = soup.find_all("h3", limit = 3)
+        #name a variable h4_tag in the soup object by using the find_all function
+        h4_tag = soup.find_all("h4", limit = 3)
+        #name a variable b_tag in the soup object by using the find_all function
+        b_tag = soup.find_all("b", limit = 3)
+        #name a variable strong_tag in the soup object by using the find_all function
+        strong_tag = soup.find_all("strong", limit = 3)
+        #name a variable em_tag in the soup object by using the find_all function
+        em_tag = soup.find_all("em", limit = 3)
+        #name a variable i_tag in the soup object by using the find_all function
+        i_tag = soup.find_all("i", limit = 3)
+        #name a variable a_tag in the soup object by using the find_all function
+        a_tag = soup.find_all("a", limit = 3)
+
+        for index in range(3):
+            line = {}
+            val = get_value(h1_tag, index)
+            if val:
+                line['h1'] = val
+            val = get_value(h2_tag, index)
+            if val:
+                line['h2'] = val
+            val = get_value(h3_tag, index)
+            if val:
+                line['h3'] = val
+            val = get_value(h4_tag, index)
+            if val:
+                line['h4'] = val
+            val = get_value(b_tag, index)
+            if val:
+                line['b'] = val
+            val = get_value(strong_tag, index)
+            if val:
+                line['strong'] = val
+            val = get_value(em_tag, index)
+            if val:
+                line['em'] = val
+            val = get_value(i_tag, index)
+            if val:
+                line['i'] = val
+            val = get_value(a_tag, index)
+            if val:
+                line['a'] = val
+
+            if line:
+                line['URL'] = url['link']
+                writer.writerow(line)
+
+    driver.quit()
+    f_out.close()
+
