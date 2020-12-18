@@ -6,7 +6,7 @@ As inspiring this post was, I did not want to pay for or sign-up for a SERPStack
 
 I then looked to https://hackernoon.com/how-to-scrape-google-with-python-bo7d2tal and https://edmundmartin.com/scraping-google-with-python/ to get started
 
-Towards the end of the second half of the script, I needed assistance and I was able to find a Python freelancer to help me finish the script
+Towards the end of the second half of the script, I needed assistance and I was able to get a friend of mine https://www.linkedin.com/in/jaspreet-singh-75899120/ to help me finish the script
 
 This script does the following:
 
